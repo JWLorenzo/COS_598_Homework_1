@@ -18,7 +18,7 @@ Pretty much my solution uses the assumption of the central limit theorem since e
 Currently a glaring issue with the calculations is the multiplier for death. It's effectively a health bar that reduces damage over time, but that's not realistic.
 It should ideally be some sort of normal distribution, similar to what I did for the damage. It's a lot harder to calculate the standard deviation of that function because
 it could be potentially infinite damage. Even the estimation I did for the average damage isn't super accurate because I would've had to do some summations to figure out the 
-accurate value. I didn't optimize towards a specific combination, but 
+accurate value. I didn't optimize towards a specific combination; I wanted to keep it as generalized as possible. 
 """
 
 # #####################################################################
@@ -459,9 +459,9 @@ def fitness_outcome(team1: list, team2: list) -> tuple:
     )
 
     return (
-        ((a_life_loss_defend / 2) + (damage_b_attacks_a_second / 2))
+        ((a_life_loss_defend * 0.5) + (damage_b_attacks_a_second * 0.5))
         / (len(team1) * team1_fitness[4]),
-        ((b_life_loss_defend / 2) + (damage_a_attacks_b_second / 2))
+        ((b_life_loss_defend * 0.5) + (damage_a_attacks_b_second * 0.5))
         / (len(team2) * team2_fitness[4]),
     )
 
