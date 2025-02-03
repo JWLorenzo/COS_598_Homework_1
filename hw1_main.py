@@ -6,6 +6,24 @@ import time
 import pprint as pprint
 from scipy.stats import norm
 
+
+# #####################################################################
+# Class: COS 598 - Game AI
+# Homework 1
+# Author: Jacob Lorenzo
+# Date: 2/2/2025
+
+"""Writeup:
+Pretty much my solution uses the assumption of the central limit theorem since every ability score is tied to effectively a die roll.
+Currently a glaring issue with the calculations is the multiplier for death. It's effectively a health bar that reduces damage over time, but that's not realistic.
+It should ideally be some sort of normal distribution, similar to what I did for the damage. It's a lot harder to calculate the standard deviation of that function because
+it could be potentially infinite damage. Even the estimation I did for the average damage isn't super accurate because I would've had to do some summations to figure out the 
+accurate value. I didn't optimize towards a specific combination, but 
+"""
+
+# #####################################################################
+
+
 # Setting to True will cause the simulator to
 # throw out a lot of additional text. Not all
 # of it helpful.
@@ -314,7 +332,7 @@ def fitness_actor(actr: Actor):
 # This should return the fitness of an entire team. Similarly to them
 # unit fitness function, you are free to return one or more values.
 # And use those values in any way you choose.
-def fitness_team(team):
+def fitness_team(team: list) -> list:
 
     team_avg_dmg = sum([fitness_actor(i)[0] for i in team]) / len(team)
 
@@ -336,11 +354,9 @@ def fitness_team(team):
 
 
 def calculate_variance(team_fitness: list) -> float:
-    variance = (
-        2 * ((((team_fitness[0] + 1) ** 2) - 1) / 12)
-        + (((team_fitness[1] + 1) ** 2) - 1) / 12
-    )
-    return variance
+    v1 = (((team_fitness[0] + 1) ** 2) - 1) / 12
+    v2 = (((team_fitness[1] + 1) ** 2) - 1) / 12
+    return 2 * v1 + v2
 
 
 def calculate_mean(team_fitness: list) -> float:
@@ -372,7 +388,9 @@ def calculate_life_loss(a: float, b: float, c: float) -> float:
 # NOTE: The two health predictions DO NOT have to sum to one. This
 # is not a probability distribution but an evaluation of the cost
 # of battle between two teams.
-def fitness_outcome(team1, team2):
+
+
+def fitness_outcome(team1: list, team2: list) -> tuple:
 
     team1_fitness = fitness_team(team1)
     team2_fitness = fitness_team(team2)
@@ -387,40 +405,28 @@ def fitness_outcome(team1, team2):
     t2_mean_accuracy_roll = calculate_mean(team2_fitness[1])
     t2_mean_evasion_roll = calculate_mean(team2_fitness[2])
 
-    stdev_a_attacks_b = calculate_std_dev(
+    stdev_a_hits_b = calculate_std_dev(
         t1_variance_accuracy_roll, t2_variance_evasion_roll
     )
-    stdev_b_attacks_a = calculate_std_dev(
+    stdev_b_hits_a = calculate_std_dev(
         t2_variance_accuracy_roll, t1_variance_evasion_roll
     )
-    exp_diff_a_attacks_b = calulate_diff(t1_mean_accuracy_roll, t2_mean_evasion_roll)
-    exp_diff_b_attacks_a = calulate_diff(t2_mean_accuracy_roll, t1_mean_evasion_roll)
-
+    exp_diff_a_hits_b = calulate_diff(t1_mean_accuracy_roll, t2_mean_evasion_roll)
+    exp_diff_b_hits_a = calulate_diff(t2_mean_accuracy_roll, t1_mean_evasion_roll)
     # Team a will lose how much hp on average when they defend first
 
-    percent_chance_hit_b_hit_a = calculate_hit_chance(
-        exp_diff_b_attacks_a, stdev_b_attacks_a
-    )
+    percent_chance_hit_b_hit_a = calculate_hit_chance(exp_diff_b_hits_a, stdev_b_hits_a)
 
     a_life_loss_defend = calculate_life_loss(
         percent_chance_hit_b_hit_a, team2_fitness[0], len(team2)
     )
-
-    print("percent_chance_hit_b_hit_a", percent_chance_hit_b_hit_a)
-    print("a_life_loss_defend", a_life_loss_defend)
-
     # Team b will lose how much hp on average when they defend first
 
-    percent_chance_hit_a_hit_b = calculate_hit_chance(
-        exp_diff_a_attacks_b, stdev_a_attacks_b
-    )
+    percent_chance_hit_a_hit_b = calculate_hit_chance(exp_diff_a_hits_b, stdev_a_hits_b)
 
     b_life_loss_defend = calculate_life_loss(
         percent_chance_hit_a_hit_b, team1_fitness[0], len(team1)
     )
-
-    print("percent_chance_hit_a_hit_b", percent_chance_hit_a_hit_b)
-    print("b_life_loss_defend", b_life_loss_defend)
 
     # Team a will lose how much hp on average when they attack first
 
@@ -428,12 +434,14 @@ def fitness_outcome(team1, team2):
         percent_chance_hit_a_hit_b, team1_fitness[0], len(team1)
     )
 
-    damage_b_attacks_a_second = calculate_life_loss(
-        percent_chance_hit_b_hit_a, team2_fitness[0], len(team2)
-    ) * (1 - (damage_a_attacks_b_first / (team2_fitness[4] * len(team2))))
+    a_life_lost_multiplier = max(
+        0, min(1, (1 - (damage_a_attacks_b_first / (team2_fitness[4] * len(team2)))))
+    )
 
-    print("damage_a_attacks_b_first", damage_a_attacks_b_first)
-    print("damage_b_attacks_a_second", damage_b_attacks_a_second)
+    damage_b_attacks_a_second = (
+        calculate_life_loss(percent_chance_hit_b_hit_a, team2_fitness[0], len(team2))
+        * a_life_lost_multiplier
+    )
 
     # Team b will lose how much hp on average when they attack first
 
@@ -441,18 +449,20 @@ def fitness_outcome(team1, team2):
         percent_chance_hit_b_hit_a * team2_fitness[0] * len(team2)
     )
 
-    damage_a_attacks_b_second = calculate_life_loss(
-        percent_chance_hit_a_hit_b, team1_fitness[0], len(team1)
-    ) * (1 - (damage_b_attacks_a_first / team1_fitness[4] * len(team1)))
+    b_life_loss_multiplier = max(
+        0, min(1, (1 - (damage_b_attacks_a_first / (team1_fitness[4] * len(team1)))))
+    )
 
-    print("damage_b_attacks_a_first", damage_b_attacks_a_first)
-    print("damage_a_attacks_b_second", damage_a_attacks_b_second)
+    damage_a_attacks_b_second = (
+        calculate_life_loss(percent_chance_hit_a_hit_b, team1_fitness[0], len(team1))
+        * b_life_loss_multiplier
+    )
 
     return (
-        (a_life_loss_defend + damage_b_attacks_a_second)
-        / (len(team1) * team1_fitness[0]),
-        (b_life_loss_defend + damage_a_attacks_b_second)
-        / (len(team2) * team2_fitness[0]),
+        ((a_life_loss_defend / 2) + (damage_b_attacks_a_second / 2))
+        / (len(team1) * team1_fitness[4]),
+        ((b_life_loss_defend / 2) + (damage_a_attacks_b_second / 2))
+        / (len(team2) * team2_fitness[4]),
     )
 
 
@@ -473,15 +483,15 @@ def main():
 
     ################################################
     # Use these to configure team composition
-    team1_tier0 = 0
-    team1_tier1 = 0
-    team1_tier2 = 0
-    team1_keys = {0: 10, 1: 10, 2: 10}
+    team1_tier0 = 5
+    team1_tier1 = 5
+    team1_tier2 = 5
+    team1_keys = {0: 50, 1: 50, 2: 50}
 
-    team2_tier0 = 0
-    team2_tier1 = 0
-    team2_tier2 = 0
-    team2_keys = {14: 10}
+    team2_tier0 = 5
+    team2_tier1 = 5
+    team2_tier2 = 5
+    team2_keys = {0: 50, 1: 50, 2: 50}
     #################################################
 
     for i in range(NUM_BATTLES):
