@@ -1,11 +1,7 @@
 import random
-import math
 import matplotlib.pyplot as plt
 import numpy as np
-import time
 import pprint as pprint
-from scipy.stats import norm
-
 
 # #####################################################################
 # Class: COS 598 - Game AI
@@ -270,12 +266,12 @@ def battle(teamA, teamB):
 # (not simulated here) would decide to initiate combat based on
 # your fitness function's prediction.
 
-# WARNING 2: The actual Team 1nd actor objects are being passed
+# WARNING 2: The actual Team and actor objects are being passed
 # into these functions for the sake of simplicity. Evaluate them.
 # DO NOT change the teams or the stats of the units.
 
 
-# The fitness_actor functionshould return the fitness of a single unit.
+# The fitness_actor function should return the fitness of a single unit.
 # This will form
 # the basis of evaluating an entire team. Fitness values can be
 # multivariate; however, remember the idea is to distill a unit's
