@@ -349,24 +349,6 @@ def fitness_team(team: list) -> list:
     ]
 
 
-def calculate_variance(team_fitness: list) -> float:
-    v1 = (((team_fitness[0] + 1) ** 2) - 1) / 12
-    v2 = (((team_fitness[1] + 1) ** 2) - 1) / 12
-    return 2 * v1 + v2
-
-
-def calculate_mean(team_fitness: list) -> float:
-    return (team_fitness[0] + 2 * team_fitness[1]) / 3
-
-
-def calculate_std_dev(a: float, b: float) -> float:
-    return math.sqrt(a + b)
-
-
-def calulate_diff(a: float, b: float) -> float:
-    return a - b
-
-
 def calculate_hit_chance(a: list, b: list) -> tuple:
     wins_t1 = 0
     wins_t2 = 0
@@ -390,7 +372,6 @@ def calculate_hit_chance(a: list, b: list) -> tuple:
             wins_t1 += 1
         if t2_acc > t1_ev:
             wins_t2 += 1
-    print(wins_t1, wins_t2)
     return (wins_t1 / trials, wins_t2 / trials)
 
 
