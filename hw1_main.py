@@ -284,7 +284,7 @@ def fitness_actor(actr: Actor):
         range(actr.get_damage() + 1, (actr.get_damage() * 2) + 1)
     )
 
-    # Technically this should be calculus, but I'm not sure how to do that in python nor do I know what the actual formula is
+    # Technically this should be calculus, but I'm not sure how to do that in python
     avg_damage_chances = (
         [
             (1 / (actr.get_damage() + 1))
